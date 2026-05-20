@@ -40,3 +40,34 @@ class RecipeViewsTest(TestCase):
         self.assertEqual(response.context['category'].name, "Тестова категорія")
         
         self.assertEqual(len(response.context['recipes']), 11)
+
+    def test_category_detail_404(self):
+        url = reverse('recipe:category_detail', args=[999])
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 404)
+
+    def test_category_empty_recipes(self):
+        empty_category = Category.objects.create(name="Порожня категорія")
+        url = reverse('recipe:category_detail', args=[empty_category.id])
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['recipes']), 0)
+
+    def test_main_view_less_than_10_recipes(self):
+        Recipe.objects.all().delete()
+        
+        for i in range(3):
+            Recipe.objects.create(
+                title=f"Новий {i}", 
+                description="Опис", 
+                instructions="Інст", 
+                ingredients="Інгр", 
+                category=self.category
+            )
+            
+        response = self.client.get(reverse('recipe:main'))
+        
+        self.assertEqual(len(response.context['recipes']), 3)
+
